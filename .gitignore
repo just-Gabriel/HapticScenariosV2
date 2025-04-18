@@ -1,0 +1,43 @@
+# Android / Gradle / IntelliJ related
+*.iml
+.gradle/
+local.properties
+.idea/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.ap_
+*.dex
+
+# Kotlin-specific
+*.class
+*.kt.class
+
+# Java-specific
+*.jar
+*.war
+*.ear
+
+# Android Studio specific
+.navigation/
+*.iws
+*.ipr
+*.sublime-workspace
+*.sublime-project
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Keystore files (⚠️ très important)
+*.jks
+*.keystore
+
+# Others
+.env
+
