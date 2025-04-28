@@ -29,11 +29,11 @@ fun ScenarioPopupScreen(navController: NavController) {
     val nextScenario = ScenarioController.getRandomScenario()
 
     LaunchedEffect(Unit) {
-        delay(1200) // Délai pour afficher le popup
+        delay(1000) // Délai pour afficher le popup
         showPopup = true
         vibrationManager.playNextVibration()
 
-        delay(2500) // Délai avant de naviguer vers les sliders
+        delay(1500) // Délai avant de naviguer vers les sliders
         navigateToNext = true
     }
 
