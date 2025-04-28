@@ -14,11 +14,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -28,7 +26,7 @@ import fr.maloof.hapticscenariosv2.utils.ScenarioController
 import fr.maloof.hapticscenariosv2.utils.VibrationManager
 import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.graphicsLayer
-
+import androidx.compose.ui.draw.drawBehind
 
 @Composable
 fun ScenarioButton(navController: NavController) {
@@ -63,23 +61,10 @@ fun ScenarioButton(navController: NavController) {
                     scaleY = scale
                 }
                 .width(220.dp)
-                .height(60.dp)
-                .shadow(8.dp, RoundedCornerShape(50)) // ➕ douce ombre floue
-                .drawBehind {
-                    drawRoundRect(
-                        color = Color(0x5500AEEF), // 💙 ombre bleutée
-                        topLeft = Offset(0f, 6f),
-                        size = size,
-                        cornerRadius = CornerRadius(50f, 50f)
-                    )
-                }
-                .clip(RoundedCornerShape(50))
-                .background(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(Color(0xFF00C6FF), Color(0xFF0072FF))
-                    )
-                )
-                .border(BorderStroke(2.dp, Color.Gray), shape = RoundedCornerShape(50))
+                .height(56.dp)
+                .shadow(8.dp, RoundedCornerShape(16.dp)) // ➔ arrondi plus petit
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFF019AAF))
                 .clickable {
                     isPressed = true
                     vibrationManager.playNextVibration()
@@ -90,10 +75,11 @@ fun ScenarioButton(navController: NavController) {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Press",
+                text = "Bouton", // ➔ uniforme avec iOS
                 color = Color.White,
                 fontSize = 18.sp,
                 style = MaterialTheme.typography.titleMedium
             )
-        }}}
-
+        }
+    }
+}

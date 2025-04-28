@@ -2,28 +2,22 @@ package fr.maloof.hapticscenariosv2.ui.scenario
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.*
 import androidx.navigation.NavController
 import fr.maloof.hapticscenariosv2.utils.ScenarioController
 import fr.maloof.hapticscenariosv2.utils.VibrationManager
 import kotlinx.coroutines.delay
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
-
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun ScenarioPopupScreen(navController: NavController) {
@@ -31,88 +25,81 @@ fun ScenarioPopupScreen(navController: NavController) {
     val vibrationManager = remember { VibrationManager(context) }
 
     var showPopup by remember { mutableStateOf(false) }
+    var navigateToNext by remember { mutableStateOf(false) }
     val nextScenario = ScenarioController.getRandomScenario()
 
-    // Lancer la vibration et le popup après délai
     LaunchedEffect(Unit) {
-        delay(1000)
+        delay(1200) // Délai pour afficher le popup
         showPopup = true
         vibrationManager.playNextVibration()
+
+        delay(2500) // Délai avant de naviguer vers les sliders
+        navigateToNext = true
     }
 
-    // Page de fond statique
+    if (navigateToNext) {
+        LaunchedEffect(Unit) {
+            navController.navigate("sliders/${vibrationManager.currentVibrationId}/$nextScenario")
+        }
+    }
+
+    // Fond d'écran
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFEFEFEF)),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
+        AnimatedVisibility(
+            visible = showPopup,
+            enter = slideInVertically(
+                initialOffsetY = { fullHeight -> fullHeight },
+                animationSpec = tween(durationMillis = 500)
+            ) + fadeIn(animationSpec = tween(500))
         ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .height(200.dp)
+                    .shadow(8.dp, RoundedCornerShape(16.dp)) // L'ombre doit être avant le clip
+                    .clip(RoundedCornerShape(16.dp)) // Coupe les bords arrondis
+                    .background(Color.White), // Fond blanc
 
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            AnimatedVisibility(
-                visible = showPopup,
-                enter = slideInVertically(
-                    initialOffsetY = { fullHeight -> fullHeight },
-                    animationSpec = tween(durationMillis = 500)
-                ) + fadeIn(animationSpec = tween(500))
+                contentAlignment = Alignment.Center
             ) {
-                Card(
+                // Notification "vide" façon iOS
+                Row(
                     modifier = Modifier
-                        .fillMaxWidth(0.85f)
-                        .height(200.dp), // Tu peux ajuster la hauteur
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                        .padding(24.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
+                    Box(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center // ✅ Centrage vertical
+                            .size(20.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xFF800080)) // Violet
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("💬 Alerte", style = MaterialTheme.typography.titleMedium)
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Button(
-                            onClick = {
-                                showPopup = false
-                                navController.navigate("sliders/${vibrationManager.currentVibrationId}/$nextScenario")
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF00C6FF),
-                                contentColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(50),
+                        Box(
+                            modifier = Modifier
+                                .width(150.dp)
+                                .height(10.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(Color.Gray.copy(alpha = 0.4f))
+                        )
+                        Box(
                             modifier = Modifier
                                 .width(200.dp)
-                                .height(50.dp)
-                                .border(BorderStroke(2.dp, Color.Gray), shape = RoundedCornerShape(50))
-                                .shadow(8.dp, shape = RoundedCornerShape(50)) // ✅ ombre douce
-                        ) {
-                            Text(
-                                "Continuer",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        }
+                                .height(10.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(Color.Gray.copy(alpha = 0.3f))
+                        )
                     }
                 }
             }
         }
     }
 }
-
-
-
-
-
-
-
-
-

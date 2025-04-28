@@ -1,6 +1,7 @@
 package fr.maloof.hapticscenariosv2.ui.sliders
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -43,15 +44,16 @@ fun SliderScreen(navController: NavController, vibrationId: Int, nextScenario: S
                     .align(Alignment.TopCenter),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Évaluation de la vibration", fontSize = 22.sp, color = Color(0xFF0072FF))
+                Text("Évaluation de la vibration",
+                    fontSize = 22.sp, color = Color(0xFF019AAF))
                 Spacer(modifier = Modifier.height(4.dp))
                 //Text("ID : $vibrationId", color = Color.Gray)
 
                 Spacer(modifier = Modifier.height(28.dp))
-                VibrationSlider("Courte", "Longue", duration) { duration = it }
+                VibrationSlider("Lent", "Rapide", duration) { duration = it }
                 VibrationSlider("Succès", "Échec", result) { result = it }
-                VibrationSlider("Surprenant", "Prévisible", surprise) { surprise = it }
-                VibrationSlider("Naturel", "Artificiel", natural) { natural = it }
+                VibrationSlider("Beaucoup", "Peu", surprise) { surprise = it }
+                VibrationSlider("Diminution", "Augmentation", natural) { natural = it }
                 VibrationSlider("Stressant", "Rassurant", emotion) { emotion = it }
             }
 
@@ -72,15 +74,16 @@ fun SliderScreen(navController: NavController, vibrationId: Int, nextScenario: S
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF00C6FF),
+                        containerColor = Color(0xFF019AAF),
                         contentColor = Color.White
                     ),
-                    shape = RoundedCornerShape(50),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .width(220.dp)
                         .height(56.dp)
-                        .border(BorderStroke(2.dp, Color.Gray), shape = RoundedCornerShape(50))
-                        .shadow(12.dp, shape = RoundedCornerShape(50))
+                        .shadow(8.dp, shape = RoundedCornerShape(16.dp))
+
+
                 ) {
                     Text(
                         "Suivant",
@@ -115,8 +118,8 @@ fun VibrationSlider(leftLabel: String, rightLabel: String, value: Float, onChang
             onValueChange = onChange,
             modifier = Modifier.fillMaxWidth(),
             colors = SliderDefaults.colors(
-                activeTrackColor = Color(0xFF00C6FF),
-                thumbColor = Color(0xFF0072FF)
+                activeTrackColor = Color(0xFF019AAF), // 🟦 ➔ même couleur que tes boutons
+                thumbColor = Color(0xFFFFFFFF)         // 🟦 ➔ même couleur pour le bouton du slider
             )
         )
     }
