@@ -2,9 +2,7 @@ package fr.maloof.hapticscenariosv2.ui.scenario
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,9 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,14 +22,12 @@ import androidx.navigation.NavController
 import fr.maloof.hapticscenariosv2.utils.ScenarioController
 import fr.maloof.hapticscenariosv2.utils.VibrationManager
 import kotlinx.coroutines.delay
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.interaction.MutableInteractionSource
 
 @Composable
 fun ScenarioButton(navController: NavController) {
     val context = LocalContext.current
     val vibrationManager = remember { VibrationManager(context) }
-
     var isPressed by remember { mutableStateOf(false) }
 
     val scale by animateFloatAsState(
@@ -62,10 +57,13 @@ fun ScenarioButton(navController: NavController) {
                 }
                 .width(220.dp)
                 .height(56.dp)
-                .shadow(8.dp, RoundedCornerShape(16.dp)) // ➔ arrondi plus petit
+                .shadow(8.dp, RoundedCornerShape(16.dp))
                 .clip(RoundedCornerShape(16.dp))
                 .background(Color(0xFF019AAF))
-                .clickable {
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
                     isPressed = true
                     vibrationManager.playNextVibration()
                     val vibrationId = vibrationManager.currentVibrationId
@@ -75,7 +73,7 @@ fun ScenarioButton(navController: NavController) {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Bouton", // ➔ uniforme avec iOS
+                text = "Bouton",
                 color = Color.White,
                 fontSize = 18.sp,
                 style = MaterialTheme.typography.titleMedium

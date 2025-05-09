@@ -37,6 +37,13 @@ fun ScenarioDragAndDropScreen(navController: NavController) {
     val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
 
+    val marginRightPx = with(density) { 24.dp.toPx() }
+    val marginLeftPx = with(density) { 24.dp.toPx() }
+    val marginTopPx = with(density) { 24.dp.toPx() }
+    val marginBottomPx = with(density) { 24.dp.toPx() }
+    val fileWidthPx = with(density) { 100.dp.toPx() }
+    val fileHeightPx = with(density) { 100.dp.toPx() }
+
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
 
@@ -53,7 +60,7 @@ fun ScenarioDragAndDropScreen(navController: NavController) {
             .fillMaxSize()
             .padding(24.dp)
     ) {
-        // ✅ Zone de dépôt
+        // Zone de dépôt
         Box(
             modifier = Modifier
                 .size(200.dp)
@@ -69,52 +76,58 @@ fun ScenarioDragAndDropScreen(navController: NavController) {
             contentAlignment = Alignment.Center
         ) {}
 
-        // ✅ Fichier à glisser
+        // Fichier à glisser
         Box(
             modifier = Modifier
                 .offset { IntOffset(offsetX.toInt(), offsetY.toInt()) }
                 .size(100.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF019AAF)) // 🟦 Ta couleur
+                .background(Color(0xFF019AAF))
                 .border(2.dp, Color.Gray, RoundedCornerShape(12.dp))
                 .onGloballyPositioned { coords ->
                     fileSize = coords.size
                     if (initialOffsetX == 0f && initialOffsetY == 0f) {
                         val corner = Random.nextInt(4)
-                        val marginPx = with(density) { 16.dp.toPx() }
-                        val fileWidthPx = with(density) { 100.dp.toPx() }
-                        val fileHeightPx = with(density) { 100.dp.toPx() }
 
                         when (corner) {
                             0 -> { // Haut gauche
-                                initialOffsetX = marginPx
-                                initialOffsetY = marginPx
+                                initialOffsetX = 0f
+                                initialOffsetY = marginTopPx
                             }
                             1 -> { // Haut droit
-                                initialOffsetX = (screenWidthPx - fileWidthPx - marginPx).coerceAtLeast(marginPx)
-                                initialOffsetY = marginPx
+                                initialOffsetX = screenWidthPx - fileWidthPx - marginRightPx - marginLeftPx
+                                initialOffsetY = marginTopPx - marginLeftPx
                             }
                             2 -> { // Bas gauche
-                                initialOffsetX = marginPx
-                                initialOffsetY = (screenHeightPx - fileHeightPx - marginPx).coerceAtLeast(marginPx)
+                                initialOffsetX = 0f - marginLeftPx
+                                initialOffsetY = screenHeightPx - fileHeightPx - marginBottomPx- marginLeftPx
                             }
                             3 -> { // Bas droit
-                                initialOffsetX = (screenWidthPx - fileWidthPx - marginPx).coerceAtLeast(marginPx)
-                                initialOffsetY = (screenHeightPx - fileHeightPx - marginPx).coerceAtLeast(marginPx)
+                                initialOffsetX = screenWidthPx - fileWidthPx - marginRightPx - marginLeftPx
+                                initialOffsetY = screenHeightPx - fileHeightPx - marginBottomPx - marginLeftPx
                             }
                         }
                         offsetX = initialOffsetX
                         offsetY = initialOffsetY
-
-
                     }
                 }
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDrag = { change, dragAmount ->
                             change.consume()
-                            offsetX += dragAmount.x
-                            offsetY += dragAmount.y
+
+                            val newOffsetX = (offsetX + dragAmount.x).coerceIn(
+                                0f,
+                                screenWidthPx - fileSize.width - marginRightPx
+                            )
+
+                            val newOffsetY = (offsetY + dragAmount.y).coerceIn(
+                                marginTopPx,
+                                screenHeightPx - fileSize.height - marginBottomPx
+                            )
+
+                            offsetX = newOffsetX
+                            offsetY = newOffsetY
                         },
                         onDragEnd = {
                             val fileCenter = Offset(
@@ -131,7 +144,6 @@ fun ScenarioDragAndDropScreen(navController: NavController) {
                                 val nextScenario = ScenarioController.getRandomScenario()
                                 navController.navigate("sliders/$vibrationId/$nextScenario")
                             } else {
-                                // Retourner à la position initiale
                                 offsetX = initialOffsetX
                                 offsetY = initialOffsetY
                             }
@@ -142,3 +154,4 @@ fun ScenarioDragAndDropScreen(navController: NavController) {
         ) {}
     }
 }
+
