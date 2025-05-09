@@ -23,12 +23,15 @@ import fr.maloof.hapticscenariosv2.utils.ScenarioController
 import fr.maloof.hapticscenariosv2.utils.VibrationManager
 import kotlinx.coroutines.delay
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import kotlinx.coroutines.launch
 
 @Composable
 fun ScenarioButton(navController: NavController) {
     val context = LocalContext.current
     val vibrationManager = remember { VibrationManager(context) }
     var isPressed by remember { mutableStateOf(false) }
+    var isClickable by remember { mutableStateOf(true) }  // verrou sans effet visuel
+    val scope = rememberCoroutineScope()
 
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 1.03f else 1f,
@@ -61,14 +64,20 @@ fun ScenarioButton(navController: NavController) {
                 .clip(RoundedCornerShape(16.dp))
                 .background(Color(0xFF019AAF))
                 .clickable(
+                    enabled = isClickable,  // bloqué après le premier clic
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) {
                     isPressed = true
+                    isClickable = false  // désactive les clics supplémentaires
                     vibrationManager.playNextVibration()
                     val vibrationId = vibrationManager.currentVibrationId
                     val nextScenario = ScenarioController.getRandomScenario()
-                    navController.navigate("sliders/$vibrationId/$nextScenario")
+
+                    scope.launch {
+                        delay(1000L)
+                        navController.navigate("sliders/$vibrationId/$nextScenario")
+                    }
                 },
             contentAlignment = Alignment.Center
         ) {
@@ -81,3 +90,5 @@ fun ScenarioButton(navController: NavController) {
         }
     }
 }
+
+
