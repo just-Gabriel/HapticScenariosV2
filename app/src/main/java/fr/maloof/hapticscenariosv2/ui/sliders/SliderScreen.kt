@@ -23,11 +23,17 @@ fun SliderScreen(navController: NavController, vibrationId: Int, nextScenario: S
     val vibrationManager = remember { VibrationManager(context) }
 
     // Valeurs binaire
-    var duration by remember { mutableStateOf(0) }
+    /*var duration by remember { mutableStateOf(0) }
     var result by remember { mutableStateOf(0) }
     var surprise by remember { mutableStateOf(0) }
     var natural by remember { mutableStateOf(0) }
-    var emotion by remember { mutableStateOf(0) }
+    var emotion by remember { mutableStateOf(0) }*/
+
+    var lentRapide by remember { mutableStateOf(0) }
+    var echecSucces by remember { mutableStateOf(0) }
+    var peuBeaucoup by remember { mutableStateOf(0) }
+    var diminutionAugmentation by remember { mutableStateOf(0) }
+    var douxTranchant by remember { mutableStateOf(0) }
 
     val completedTests = TestProgressController.completedTests.value
     val totalTests = TestProgressController.totalTests
@@ -74,11 +80,11 @@ fun SliderScreen(navController: NavController, vibrationId: Int, nextScenario: S
 
 
                 // Les toggles avec valeurs 0f / 1f
-                VibrationToggle("Lent", "Rapide", duration == 1) { duration = if (it) 1 else 0 }
-                VibrationToggle("Échec", "Succès", result == 1) { result = if (it) 1 else 0 }
-                VibrationToggle("Peu", "Beaucoup", surprise == 1) { surprise = if (it) 1 else 0 }
-                VibrationToggle("Diminution", "Augmentation", natural == 1) { natural = if (it) 1 else 0 }
-                VibrationToggle("Doux", "Tranchant", emotion == 1) { emotion = if (it) 1 else 0 }}
+                VibrationToggle("Lent", "Rapide", lentRapide == 1) { lentRapide = if (it) 1 else 0 }
+                VibrationToggle("Échec", "Succès", echecSucces == 1) { echecSucces = if (it) 1 else 0 }
+                VibrationToggle("Peu", "Beaucoup", peuBeaucoup == 1) { peuBeaucoup = if (it) 1 else 0 }
+                VibrationToggle("Diminution", "Augmentation", diminutionAugmentation == 1) { diminutionAugmentation = if (it) 1 else 0 }
+                VibrationToggle("Doux", "Tranchant", douxTranchant == 1) { douxTranchant = if (it) 1 else 0 }}
             }
 
 
@@ -94,11 +100,11 @@ fun SliderScreen(navController: NavController, vibrationId: Int, nextScenario: S
 
 
                         println("=== Résumé des choix de l'utilisateur ===")
-                        println("Lent/Rapide: $duration")
-                        println("Échec/Succès: $result")
-                        println("Peu/Beaucoup: $surprise")
-                        println("Diminution/Augmentation: $natural")
-                        println("Doux/Tranchant: $emotion")
+                        println("Lent/Rapide: $lentRapide")
+                        println("Échec/Succès: $echecSucces")
+                        println("Peu/Beaucoup: $peuBeaucoup")
+                        println("Diminution/Augmentation: $diminutionAugmentation")
+                        println("Doux/Tranchant: $douxTranchant")
                         println("Test validé $completedTests / $totalTests")
                         println("compteur de test  $remainingTests")
 
