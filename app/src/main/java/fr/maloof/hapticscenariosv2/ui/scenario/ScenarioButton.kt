@@ -23,10 +23,11 @@ import fr.maloof.hapticscenariosv2.utils.ScenarioController
 import fr.maloof.hapticscenariosv2.utils.VibrationManager
 import kotlinx.coroutines.delay
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import fr.maloof.hapticscenariosv2.network.DataModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun ScenarioButton(navController: NavController) {
+fun ScenarioButton(navController: NavController, user: DataModel.User, telephone: DataModel.Telephone) {
     val context = LocalContext.current
     val vibrationManager = remember { VibrationManager(context) }
     var isPressed by remember { mutableStateOf(false) }
@@ -76,7 +77,12 @@ fun ScenarioButton(navController: NavController) {
 
                     scope.launch {
                         delay(1000L)
-                        navController.navigate("sliders/$vibrationId/$nextScenario")
+                        navController.currentBackStackEntry?.savedStateHandle?.set("vibrationId", vibrationId)
+                        navController.currentBackStackEntry?.savedStateHandle?.set("nextScenario", nextScenario)
+                        navController.currentBackStackEntry?.savedStateHandle?.set("user", user)
+                        navController.currentBackStackEntry?.savedStateHandle?.set("telephone", telephone)
+
+                        navController.navigate("sliders")
                     }
                 },
             contentAlignment = Alignment.Center

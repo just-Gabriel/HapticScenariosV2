@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,9 +26,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 import androidx.compose.ui.draw.clip
+import fr.maloof.hapticscenariosv2.network.DataModel
 
 @Composable
-fun ScenarioDragAndDropScreen(navController: NavController) {
+fun ScenarioDragAndDropScreen(navController: NavController, user: DataModel.User, telephone: DataModel.Telephone) {
     val context = LocalContext.current
     val vibrationManager = remember { VibrationManager(context) }
     val scope = rememberCoroutineScope()
@@ -151,7 +151,12 @@ fun ScenarioDragAndDropScreen(navController: NavController) {
 
                                 scope.launch {
                                     delay(1000L)
-                                    navController.navigate("sliders/$vibrationId/$nextScenario")
+                                    navController.currentBackStackEntry?.savedStateHandle?.set("vibrationId", vibrationId)
+                                    navController.currentBackStackEntry?.savedStateHandle?.set("nextScenario", nextScenario)
+                                    navController.currentBackStackEntry?.savedStateHandle?.set("user", user)
+                                    navController.currentBackStackEntry?.savedStateHandle?.set("telephone", telephone)
+                                    navController.navigate("sliders")
+
                                 }
                             } else {
                                 offsetX = initialOffsetX

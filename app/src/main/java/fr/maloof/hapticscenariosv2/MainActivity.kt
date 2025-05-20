@@ -1,6 +1,7 @@
 package fr.maloof.hapticscenariosv2
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
@@ -10,6 +11,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import fr.maloof.hapticscenariosv2.network.DataModel
+import fr.maloof.hapticscenariosv2.ui.form.UserFormScreen
 import fr.maloof.hapticscenariosv2.ui.scenario.*
 import fr.maloof.hapticscenariosv2.ui.sliders.SliderScreen
 
@@ -23,27 +26,82 @@ class MainActivity : ComponentActivity() {
                 Surface {
                     val navController: NavHostController = rememberNavController()
 
-                    NavHost(navController = navController, startDestination = "start") {
+                    NavHost(navController = navController, startDestination = "userForm") {
 
-                        composable("start") { StartScreen(navController) }
-                        composable("scenario") { ScenarioButton(navController) }
-                        composable("scenario_drag") { ScenarioDragAndDropScreen(navController) }
-                        composable("scenario_popup") { ScenarioPopupScreen(navController) }
-
-                        // ✅ Route complète avec vibrationId + nextScenario
-                        composable("sliders/{vibrationId}/{nextScenario}") { backStackEntry ->
-                            val vibrationId =
-                                backStackEntry.arguments?.getString("vibrationId")?.toIntOrNull()
-                                    ?: 0
-                            val nextScenario = backStackEntry.arguments?.getString("nextScenario")
-                            SliderScreen(navController, vibrationId, nextScenario)
+                        // Formulaire utilisateur
+                        composable("userForm") {
+                            UserFormScreen { user, telephone ->
+                                navController.currentBackStackEntry?.savedStateHandle?.set("user", user)
+                                navController.currentBackStackEntry?.savedStateHandle?.set("telephone", telephone)
+                                navController.navigate("start")
+                            }
                         }
 
-                        composable("end") { EndScreen() }
+                        // Écran de démarrage du test
+                        composable("start") {
+                            val user = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.User>("user")
+                            val telephone = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.Telephone>("telephone")
+
+                            if (user != null && telephone != null) {
+                                StartScreen(navController, user, telephone)
+                            }
+                        }
+
+                        // Scénario bouton
+                        composable("bouton") {
+                            val user = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.User>("user")
+                            val telephone = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.Telephone>("telephone")
+
+                            if (user != null && telephone != null) {
+                                ScenarioButton(navController, user, telephone)
+                            }else {
+                                Log.e("NAV", "❌ User ou Telephone manquant dans bouton")
+                            }
+                        }
+
+                        // Scénario drag
+                        composable("scenario_drag") {
+                            val user = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.User>("user")
+                            val telephone = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.Telephone>("telephone")
+
+                            if (user != null && telephone != null) {
+                                ScenarioDragAndDropScreen(navController, user, telephone)
+                            }else {
+                                Log.e("NAV", "❌ User ou Telephone manquant dans scenario_drag")
+                            }
+                        }
+
+                        // Scénario popup
+                        composable("scenario_popup") {
+                            val user = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.User>("user")
+                            val telephone = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.Telephone>("telephone")
+
+                            if (user != null && telephone != null) {
+                                ScenarioPopupScreen(navController, user, telephone)
+                            }else {
+                                Log.e("NAV", "❌ User ou Telephone manquant dans scenario_popup")
+                            }
+                        }
+
+                        // Écran des sliders
+                        composable("sliders") {
+                            val vibrationId = navController.previousBackStackEntry?.savedStateHandle?.get<Int>("vibrationId") ?: 0
+                            val nextScenario = navController.previousBackStackEntry?.savedStateHandle?.get<String>("nextScenario") ?: ""
+                            val user = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.User>("user")
+                            val telephone = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.Telephone>("telephone")
+
+                            if (user != null && telephone != null) {
+                                SliderScreen(navController, vibrationId, nextScenario, user, telephone)
+                            }
+                        }
+
+                        // Fin du test
+                        composable("end") {
+                            EndScreen()
+                        }
                     }
                 }
             }
         }
     }
 }
-

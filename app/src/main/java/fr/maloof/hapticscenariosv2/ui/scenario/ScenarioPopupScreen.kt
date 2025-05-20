@@ -3,7 +3,6 @@ package fr.maloof.hapticscenariosv2.ui.scenario
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
@@ -14,13 +13,14 @@ import fr.maloof.hapticscenariosv2.utils.VibrationManager
 import kotlinx.coroutines.delay
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.border
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
+import fr.maloof.hapticscenariosv2.network.DataModel
 
 @Composable
-fun ScenarioPopupScreen(navController: NavController) {
+fun ScenarioPopupScreen(navController: NavController, user: DataModel.User, telephone: DataModel.Telephone)
+ {
     val context = LocalContext.current
     val vibrationManager = remember { VibrationManager(context) }
 
@@ -37,13 +37,18 @@ fun ScenarioPopupScreen(navController: NavController) {
         navigateToNext = true
     }
 
-    if (navigateToNext) {
-        LaunchedEffect(Unit) {
-            navController.navigate("sliders/${vibrationManager.currentVibrationId}/$nextScenario")
-        }
-    }
+     if (navigateToNext) {
+         LaunchedEffect(Unit) {
+             navController.currentBackStackEntry?.savedStateHandle?.set("vibrationId", vibrationManager.currentVibrationId)
+             navController.currentBackStackEntry?.savedStateHandle?.set("nextScenario", nextScenario)
+             navController.currentBackStackEntry?.savedStateHandle?.set("user", user)
+             navController.currentBackStackEntry?.savedStateHandle?.set("telephone", telephone)
+             navController.navigate("sliders")
+         }
+     }
 
-    // Fond d'écran
+
+     // Fond d'écran
     Box(
         modifier = Modifier
             .fillMaxSize()

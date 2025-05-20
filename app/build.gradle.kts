@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
 }
+apply(plugin = "kotlin-parcelize")
 
 android {
     namespace = "fr.maloof.hapticscenariosv2"
@@ -65,6 +66,10 @@ dependencies {
     implementation (libs.androidx.material.icons.extended)
     implementation (libs.ui)
     implementation (libs.material.icons.extended)
+    implementation ("com.squareup.retrofit2:retrofit-mock:2.9.0")
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
