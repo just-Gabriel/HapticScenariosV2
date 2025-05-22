@@ -44,6 +44,9 @@ fun SliderScreen(
 
     val scenarioEvaluated = nextScenario ?: ScenarioController.getRandomScenario()
 
+    var isButtonEnabled by remember { mutableStateOf(true) }
+    var isLoading by remember { mutableStateOf(false) }
+
     Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF4F9FC)) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -73,13 +76,16 @@ fun SliderScreen(
             ) {
                 Button(
                     onClick = {
+                        if (!isButtonEnabled) return@Button
+                        isButtonEnabled = false
+                        isLoading = true
+
                         TestProgressController.increment()
 
                         println("🟩 [DEBUG] Vibration évaluée : $vibrationId")
                         println("🟩 [DEBUG] Scénario : $scenarioEvaluated")
                         println("🟩 [DEBUG] Réponses : L/R=$lentRapide, E/S=$echecSucces, P/B=$peuBeaucoup, D/A=$diminutionAugmentation, D/T=$douxTranchant")
                         println("🟩 [DEBUG] User ID : ${user.id}, Tel ID : ${telephone.id}")
-
 
                         val experience = DataModel.EmotionalExperience(
                             user = "/api/users/${user.id}",
@@ -113,17 +119,23 @@ fun SliderScreen(
                                         navController.navigate(next)
                                     } else {
                                         println("❌ Erreur HTTP (${response.code()}): ${response.errorBody()?.string()}")
+                                        isButtonEnabled = true
+                                        isLoading = false
                                     }
                                 }
 
                                 override fun onFailure(call: Call<DataModel.EmotionalExperience>, t: Throwable) {
                                     println("🔥 Envoi échoué : ${t.message}")
+                                    isButtonEnabled = true
+                                    isLoading = false
                                 }
                             })
                     },
+                    enabled = isButtonEnabled,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF019AAF),
-                        contentColor = Color.White
+                        contentColor = Color.White,
+                        disabledContainerColor = Color.Gray
                     ),
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
@@ -131,12 +143,21 @@ fun SliderScreen(
                         .height(56.dp)
                         .shadow(8.dp, RoundedCornerShape(16.dp))
                 ) {
-                    Text("Suivant", fontSize = 16.sp)
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Suivant", fontSize = 16.sp)
+                    }
                 }
             }
         }
     }
 }
+
 
 
 @Composable

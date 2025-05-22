@@ -1,6 +1,5 @@
 package fr.maloof.hapticscenariosv2.utils
 
-
 import android.content.Context
 import android.os.Build
 import android.os.VibrationEffect
@@ -18,22 +17,34 @@ class VibrationManager(private val context: Context) {
         context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
     }
 
-    // === Liste des vibrations associées à un ID ===
+    // Liste de vibrations unique partagée
+    companion object {
+        private var cachedVibrationList: List<Pair<Int, () -> Unit>>? = null
+        private var globalIndex = 0  }
+
     private var vibrationListWithId: List<Pair<Int, () -> Unit>> = emptyList()
-    private var currentIndex = 0
+    private var currentIndex: Int
+        get() = globalIndex
+        set(value) { globalIndex = value }
+
     var currentVibrationId: Int = 0
         private set
 
     private var currentVibrationCallback: (() -> Unit)? = null
 
-    // === Initialisation de la liste mélangée au démarrage ===
     init {
         reshuffleVibrationList()
+        println("✅ VibrationManager initialisé avec la liste : ${getCurrentVibrationList()}")
     }
 
-    // Mélange la liste des vibrations
     private fun reshuffleVibrationList() {
-        vibrationListWithId = listOf(
+        if (cachedVibrationList != null) {
+            vibrationListWithId = cachedVibrationList!!
+            Log.d("HAPTIC_UTIL", "♻️ Liste réutilisée")
+            return
+        }
+
+        val baseList = listOf(
             1 to { keyboardReleaseFeedback() },
             2 to { virtualKeyReleaseFeedback() },
             3 to { clockTickFeedback() },
@@ -54,32 +65,44 @@ class VibrationManager(private val context: Context) {
             18 to { dragStartFeedback() },
             19 to { segmentTickFeedback() },
             20 to { segmentFrequentTickFeedback() }
-        ).shuffled()
-        currentIndex = 0
+        )
+
+        val fullList = baseList.flatMap { listOf(it, it, it) }.toMutableList()
+
+        var shuffled: List<Pair<Int, () -> Unit>>
+        do {
+            shuffled = fullList.shuffled()
+        } while (hasConsecutiveDuplicates(shuffled))
+
+        vibrationListWithId = shuffled
+        cachedVibrationList = shuffled
+        Log.d("HAPTIC_UTIL", "✅ Liste mélangée générée")
     }
 
-    // Joue la prochaine vibration (et reshuffle si fin de liste atteinte)
-    fun playNextVibration() {
-        if (currentIndex >= vibrationListWithId.size) {
-            reshuffleVibrationList()
+    private fun hasConsecutiveDuplicates(list: List<Pair<Int, () -> Unit>>): Boolean {
+        for (i in 1 until list.size) {
+            if (list[i].first == list[i - 1].first) return true
         }
+        return false
+    }
+
+    fun playNextVibration() {
+        if (currentIndex >= vibrationListWithId.size) return
 
         val (id, vibration) = vibrationListWithId[currentIndex]
         currentVibrationId = id
         currentVibrationCallback = vibration
 
-        Log.d("HAPTIC_UTIL", "▶️ Playing vibration ID: $currentVibrationId")
+        Log.d("HAPTIC_UTIL", "▶️ Playing vibration ID: $currentVibrationId (index $currentIndex)")
         vibration.invoke()
         currentIndex++
     }
 
-    // Rejoue la vibration actuelle (ex: dans le scénario)
     fun replayCurrentVibration() {
         currentVibrationCallback?.invoke()
             ?: Log.w("HAPTIC_UTIL", "⚠️ No vibration to replay")
     }
 
-    // Si jamais tu appelles une vibration manuelle par type
     fun vibrateByType(type: Int) {
         Log.d("VibrationManager", "🎯 vibrateByType($type)")
         when (type) {
@@ -106,12 +129,11 @@ class VibrationManager(private val context: Context) {
             else -> defaultFeedback()
         }
     }
+
     fun defaultFeedback() {
         vibrateOneShot(100)
     }
 
-
-    // === Méthodes de base ===
     fun vibratePattern(pattern: LongArray) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val effect = VibrationEffect.createWaveform(pattern, -1)
@@ -129,7 +151,7 @@ class VibrationManager(private val context: Context) {
             vibrator.vibrate(longArrayOf(0, milliseconds), -1)
         }
     }
-    //___________________________________________________________________________________________________________________________________________________________
+
     fun getCurrentVibrationList(): List<Int> {
         return vibrationListWithId.map { it.first }
     }
@@ -138,115 +160,26 @@ class VibrationManager(private val context: Context) {
         return currentIndex >= vibrationListWithId.size
     }
 
+    // === Feedback personnalisés ===
 
-    //--------------------------------------------------------------------------------------------------------------------------------------------------------------
-    // === Feedback personnalisés (patterns ou durées) ===
-    fun keyboardReleaseFeedback() {
-        val pattern = longArrayOf(0, 50, 50, 100)
-        vibratePattern(pattern)
-    }
-
-    // VIRTUAL_KEY_RELEASE
-    fun virtualKeyReleaseFeedback() {
-        val pattern = longArrayOf(0, 30, 30, 70)
-        vibratePattern(pattern)
-    }
-
-    // CLOCK_TICK
-    fun clockTickFeedback() {
-        val pattern = longArrayOf(0, 10, 20, 10)
-        vibratePattern(pattern)
-    }
-
-    // TEXT_HANDLE_MOVE
-    fun textHandleMoveFeedback() {
-        val pattern = longArrayOf(0, 40, 40, 80)
-        vibratePattern(pattern)
-    }
-
-    //GESTURE_END
-    fun gestureEndFeedback() {
-        val pattern = longArrayOf(0, 60, 60, 120)
-        vibratePattern(pattern)
-    }
-
-    // KEYBOARD_PRESS
-    fun keyboardPressFeedback() {
-        vibrateOneShot(50)
-    }
-
-    // VIRTUAL_KEY
-    fun virtualKeyFeedback() {
-        vibrateOneShot(30)
-    }
-
-    // KEYBOARD_TAP
-    fun keyboardTapFeedback() {
-        vibrateOneShot(20)
-    }
-
-    // CONTEXT_CLICK
-    fun contextClickFeedback() {
-        vibrateOneShot(100)
-    }
-
-    // GESTURE_START
-    fun gestureStartFeedback() {
-        val pattern = longArrayOf(0, 70, 70, 140)
-        vibratePattern(pattern)
-    }
-
-    // CONFIRM
-    fun confirmFeedback() {
-        vibrateOneShot(200)
-    }
-
-    //r LONG_PRESS
-    fun longPressFeedback() {
-        vibrateOneShot(400)
-    }
-
-    // REJECT
-    fun rejectFeedback() {
-        val pattern = longArrayOf(0, 50, 50, 50, 50, 50)
-        vibratePattern(pattern)
-    }
-
-    // TOGGLE_ON
-    fun toggleOnFeedback() {
-        vibrateOneShot(150)
-    }
-
-    //TOGGLE_OFF
-    fun toggleOffFeedback() {
-        vibrateOneShot(100)
-    }
-
-    // GESTURE_THRESHOLD_ACTIVATE
-    fun gestureThresholdActivateFeedback() {
-        val pattern = longArrayOf(0, 200, 50, 200)
-        vibratePattern(pattern)
-    }
-
-    // GESTURE_THRESHOLD_DEACTIVATE
-    fun gestureThresholdDeactivateFeedback() {
-        val pattern = longArrayOf(0, 200, 50, 100)
-        vibratePattern(pattern)
-    }
-
-    //  DRAG_START
-    fun dragStartFeedback() {
-        val pattern = longArrayOf(0, 100, 50, 100)
-        vibratePattern(pattern)
-    }
-
-    // SEGMENT_TICK
-    fun segmentTickFeedback() {
-        vibrateOneShot(10)
-    }
-
-    // SEGMENT_FREQUENT_TICK
-    fun segmentFrequentTickFeedback() {
-        vibrateOneShot(5)
-    }
+    fun keyboardReleaseFeedback() = vibratePattern(longArrayOf(0, 50, 50, 100))
+    fun virtualKeyReleaseFeedback() = vibratePattern(longArrayOf(0, 30, 30, 70))
+    fun clockTickFeedback() = vibratePattern(longArrayOf(0, 10, 20, 10))
+    fun textHandleMoveFeedback() = vibratePattern(longArrayOf(0, 40, 40, 80))
+    fun gestureEndFeedback() = vibratePattern(longArrayOf(0, 60, 60, 120))
+    fun keyboardPressFeedback() = vibrateOneShot(50)
+    fun virtualKeyFeedback() = vibrateOneShot(30)
+    fun keyboardTapFeedback() = vibrateOneShot(20)
+    fun contextClickFeedback() = vibrateOneShot(100)
+    fun gestureStartFeedback() = vibratePattern(longArrayOf(0, 70, 70, 140))
+    fun confirmFeedback() = vibrateOneShot(200)
+    fun longPressFeedback() = vibrateOneShot(400)
+    fun rejectFeedback() = vibratePattern(longArrayOf(0, 50, 50, 50, 50, 50))
+    fun toggleOnFeedback() = vibrateOneShot(150)
+    fun toggleOffFeedback() = vibrateOneShot(100)
+    fun gestureThresholdActivateFeedback() = vibratePattern(longArrayOf(0, 200, 50, 200))
+    fun gestureThresholdDeactivateFeedback() = vibratePattern(longArrayOf(0, 200, 50, 100))
+    fun dragStartFeedback() = vibratePattern(longArrayOf(0, 100, 50, 100))
+    fun segmentTickFeedback() = vibrateOneShot(10)
+    fun segmentFrequentTickFeedback() = vibrateOneShot(5)
 }
