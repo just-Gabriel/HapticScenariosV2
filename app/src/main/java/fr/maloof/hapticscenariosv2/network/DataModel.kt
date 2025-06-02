@@ -29,6 +29,19 @@ class DataModel {
         val numeroModele: String,
     ) : Parcelable
 
+    @Parcelize
+    data class VibrationEntry(
+        val id: Int,
+        val action: () -> Unit
+    ) : Parcelable
+
+    @Parcelize
+    data class ScenarioVibration(
+        val scenario: String,
+        val vibrationId: Int,
+        val callback: () -> Unit
+    ): Parcelable
+
     data class EmotionalExperience(
         val user: String,
         val telephone: String,
@@ -41,10 +54,4 @@ class DataModel {
         val vibrationId: Int,
         val mobile: Int
     )
-
-    @Parcelize
-    data class VibrationEntry(
-        val id: Int,
-        val action: () -> Unit
-    ) : Parcelable
 }

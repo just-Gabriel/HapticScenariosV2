@@ -14,24 +14,34 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import fr.maloof.hapticscenariosv2.utils.ScenarioController
-import fr.maloof.hapticscenariosv2.utils.VibrationManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 import androidx.compose.ui.draw.clip
-import fr.maloof.hapticscenariosv2.network.DataModel
+import fr.maloof.hapticscenariosv2.utils.navigateToSlidersWithTest
+import fr.maloof.hapticscenariosv2.viewmodel.ScenarioViewModel
 
 @Composable
-fun ScenarioDragAndDropScreen(navController: NavController, user: DataModel.User, telephone: DataModel.Telephone) {
-    val context = LocalContext.current
-    val vibrationManager = remember { VibrationManager(context) }
+fun ScenarioDragAndDropScreen(
+    navController: NavController,
+    viewModel: ScenarioViewModel = viewModel()
+) {
+    val test = viewModel.getCurrentTest()
+    val user = viewModel.user.value
+    val telephone = viewModel.telephone.value
+
+
+    if (test == null || user == null || telephone == null) {
+        println("❌ Données manquantes dans ScenarioDragAndDropScreen")
+        return
+    }
+
     val scope = rememberCoroutineScope()
 
     val configuration = LocalConfiguration.current
@@ -48,17 +58,13 @@ fun ScenarioDragAndDropScreen(navController: NavController, user: DataModel.User
 
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
-
     var initialOffsetX by remember { mutableStateOf(0f) }
     var initialOffsetY by remember { mutableStateOf(0f) }
 
     var dropZonePosition by remember { mutableStateOf(Offset.Zero) }
     var dropZoneSize by remember { mutableStateOf(IntSize.Zero) }
-
     var fileSize by remember { mutableStateOf(IntSize.Zero) }
-
     var isDragEnabled by remember { mutableStateOf(true) }
-
 
     Box(
         modifier = Modifier
@@ -74,8 +80,7 @@ fun ScenarioDragAndDropScreen(navController: NavController, user: DataModel.User
                 .background(Color(0xFFEEEEEE))
                 .border(2.dp, Color.Gray, RoundedCornerShape(12.dp))
                 .onGloballyPositioned { coords ->
-                    val localOffset = coords.positionInRoot()
-                    dropZonePosition = Offset(localOffset.x, localOffset.y)
+                    dropZonePosition = coords.positionInRoot()
                     dropZoneSize = coords.size
                 },
             contentAlignment = Alignment.Center
@@ -93,23 +98,13 @@ fun ScenarioDragAndDropScreen(navController: NavController, user: DataModel.User
                     fileSize = coords.size
                     if (initialOffsetX == 0f && initialOffsetY == 0f) {
                         val corner = Random.nextInt(4)
-                        when (corner) {
-                            0 -> {
-                                initialOffsetX = 0f
-                                initialOffsetY = marginTopPx
-                            }
-                            1 -> {
-                                initialOffsetX = screenWidthPx - fileWidthPx - marginRightPx - marginLeftPx
-                                initialOffsetY = marginTopPx - marginLeftPx
-                            }
-                            2 -> {
-                                initialOffsetX = 0f - marginLeftPx
-                                initialOffsetY = screenHeightPx - fileHeightPx - marginBottomPx - marginLeftPx
-                            }
-                            3 -> {
-                                initialOffsetX = screenWidthPx - fileWidthPx - marginRightPx - marginLeftPx
-                                initialOffsetY = screenHeightPx - fileHeightPx - marginBottomPx - marginLeftPx
-                            }
+                        initialOffsetX = when (corner) {
+                            0, 2 -> 0f
+                            else -> screenWidthPx - fileWidthPx - marginRightPx - marginLeftPx
+                        }
+                        initialOffsetY = when (corner) {
+                            0, 1 -> marginTopPx
+                            else -> screenHeightPx - fileHeightPx - marginBottomPx - marginLeftPx
                         }
                         offsetX = initialOffsetX
                         offsetY = initialOffsetY
@@ -118,45 +113,30 @@ fun ScenarioDragAndDropScreen(navController: NavController, user: DataModel.User
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDrag = { change, dragAmount ->
-                            if (isDragEnabled) { // 👈 Bloque les mouvements après succès
+                            if (isDragEnabled) {
                                 change.consume()
-                                val newOffsetX = (offsetX + dragAmount.x).coerceIn(
-                                    0f,
-                                    screenWidthPx - fileSize.width - marginRightPx
+                                offsetX = (offsetX + dragAmount.x).coerceIn(
+                                    0f, screenWidthPx - fileSize.width - marginRightPx
                                 )
-                                val newOffsetY = (offsetY + dragAmount.y).coerceIn(
-                                    marginTopPx,
-                                    screenHeightPx - fileSize.height - marginBottomPx
+                                offsetY = (offsetY + dragAmount.y).coerceIn(
+                                    marginTopPx, screenHeightPx - fileSize.height - marginBottomPx
                                 )
-                                offsetX = newOffsetX
-                                offsetY = newOffsetY
                             }
                         },
                         onDragEnd = {
-                            if (!isDragEnabled) return@detectDragGestures  // 👈 Ignore les fins de drag après succès
+                            if (!isDragEnabled) return@detectDragGestures
 
-                            val fileCenter = Offset(
-                                offsetX + fileSize.width / 2,
-                                offsetY + fileSize.height / 2
-                            )
+                            val fileCenter = Offset(offsetX + fileSize.width / 2, offsetY + fileSize.height / 2)
                             val droppedInZone =
                                 fileCenter.x in dropZonePosition.x..(dropZonePosition.x + dropZoneSize.width) &&
                                         fileCenter.y in dropZonePosition.y..(dropZonePosition.y + dropZoneSize.height)
 
                             if (droppedInZone) {
-                                isDragEnabled = false  // 👈 Désactive le drag après succès
-                                vibrationManager.playNextVibration()
-                                val vibrationId = vibrationManager.currentVibrationId
-                                val nextScenario = ScenarioController.getRandomScenario()
-
+                                isDragEnabled = false
+                                test.callback.invoke()
                                 scope.launch {
                                     delay(1000L)
-                                    navController.currentBackStackEntry?.savedStateHandle?.set("vibrationId", vibrationId)
-                                    navController.currentBackStackEntry?.savedStateHandle?.set("nextScenario", nextScenario)
-                                    navController.currentBackStackEntry?.savedStateHandle?.set("user", user)
-                                    navController.currentBackStackEntry?.savedStateHandle?.set("telephone", telephone)
-                                    navController.navigate("sliders")
-
+                                    navigateToSlidersWithTest(navController, viewModel, test)
                                 }
                             } else {
                                 offsetX = initialOffsetX
@@ -164,5 +144,7 @@ fun ScenarioDragAndDropScreen(navController: NavController, user: DataModel.User
                             }
                         }
                     )
-                })}}
-
+                }
+        )
+    }
+}

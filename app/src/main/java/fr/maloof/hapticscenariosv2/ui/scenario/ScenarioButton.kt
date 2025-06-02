@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -18,26 +19,41 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import fr.maloof.hapticscenariosv2.utils.ScenarioController
 import fr.maloof.hapticscenariosv2.utils.VibrationManager
+import fr.maloof.hapticscenariosv2.utils.navigateToSlidersWithTest
+import fr.maloof.hapticscenariosv2.viewmodel.ScenarioViewModel
 import kotlinx.coroutines.delay
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import fr.maloof.hapticscenariosv2.network.DataModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun ScenarioButton(navController: NavController, user: DataModel.User, telephone: DataModel.Telephone) {
+fun ScenarioButton(
+    navController: NavController,
+    viewModel: ScenarioViewModel = viewModel()
+) {
+    val test = viewModel.getCurrentTest()
+    val user = viewModel.user.value
+    val telephone = viewModel.telephone.value
+
+
+    if (test == null || user == null || telephone == null) {
+        println("❌ Données manquantes dans ScenarioButton")
+        return
+    }
+
     val context = LocalContext.current
     val vibrationManager = remember { VibrationManager(context) }
-    var isPressed by remember { mutableStateOf(false) }
-    var isClickable by remember { mutableStateOf(true) }  // verrou sans effet visuel
+
     val scope = rememberCoroutineScope()
+    var isPressed by remember { mutableStateOf(false) }
+    var isClickable by remember { mutableStateOf(true) }
+
+    val callback = vibrationManager.getCallbackForId(test.vibrationId)
 
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 1.03f else 1f,
-        animationSpec = tween(150),
-        label = "scale"
+        animationSpec = tween(150), label = "scale"
     )
 
     LaunchedEffect(isPressed) {
@@ -65,30 +81,27 @@ fun ScenarioButton(navController: NavController, user: DataModel.User, telephone
                 .clip(RoundedCornerShape(16.dp))
                 .background(Color(0xFF019AAF))
                 .clickable(
-                    enabled = isClickable,  // bloqué après le premier clic
+                    enabled = isClickable,
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) {
-                    isPressed = true
-                    isClickable = false  // désactive les clics supplémentaires
-                    vibrationManager.playNextVibration()
-                    val vibrationId = vibrationManager.currentVibrationId
-                    val nextScenario = ScenarioController.getRandomScenario()
+                    if (test.scenario == "bouton") {
+                        isPressed = true
+                        isClickable = false
+                        callback.invoke()
 
-                    scope.launch {
-                        delay(1000L)
-                        navController.currentBackStackEntry?.savedStateHandle?.set("vibrationId", vibrationId)
-                        navController.currentBackStackEntry?.savedStateHandle?.set("nextScenario", nextScenario)
-                        navController.currentBackStackEntry?.savedStateHandle?.set("user", user)
-                        navController.currentBackStackEntry?.savedStateHandle?.set("telephone", telephone)
-
-                        navController.navigate("sliders")
+                        scope.launch {
+                            delay(1000L)
+                            navigateToSlidersWithTest(navController, viewModel, test)
+                        }
+                    } else {
+                        navController.navigate("test_termine")
                     }
                 },
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Bouton",
+                "Bouton",
                 color = Color.White,
                 fontSize = 18.sp,
                 style = MaterialTheme.typography.titleMedium
@@ -96,5 +109,3 @@ fun ScenarioButton(navController: NavController, user: DataModel.User, telephone
         }
     }
 }
-
-

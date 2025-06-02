@@ -7,14 +7,17 @@ import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.remember
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import fr.maloof.hapticscenariosv2.network.DataModel
 import fr.maloof.hapticscenariosv2.ui.form.UserFormScreen
 import fr.maloof.hapticscenariosv2.ui.scenario.*
 import fr.maloof.hapticscenariosv2.ui.sliders.SliderScreen
+import fr.maloof.hapticscenariosv2.utils.VibrationManager
+import fr.maloof.hapticscenariosv2.viewmodel.ScenarioViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,80 +28,66 @@ class MainActivity : ComponentActivity() {
             ) {
                 Surface {
                     val navController: NavHostController = rememberNavController()
+                    val vibrationManager = remember { VibrationManager(this) }
+                    val viewModel: ScenarioViewModel = viewModel()
+
 
                     NavHost(navController = navController, startDestination = "userForm") {
 
                         // Formulaire utilisateur
                         composable("userForm") {
-                            UserFormScreen { user, telephone ->
-                                navController.currentBackStackEntry?.savedStateHandle?.set("user", user)
-                                navController.currentBackStackEntry?.savedStateHandle?.set("telephone", telephone)
-                                navController.navigate("start")
-                            }
+                            UserFormScreen(
+                                vibrationManager = vibrationManager,
+                                viewModel = viewModel,
+                                onFormSubmit = {
+                                    navController.navigate("start")
+                                }
+                            )
                         }
 
-                        // Écran de démarrage du test
+                        // Démarrage du test
                         composable("start") {
-                            val user = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.User>("user")
-                            val telephone = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.Telephone>("telephone")
-
-                            if (user != null && telephone != null) {
-                                StartScreen(navController, user, telephone)
-                            }
+                            StartScreen(navController, viewModel)
                         }
 
-                        // Scénario bouton
+
+                        // Scénarios
                         composable("bouton") {
-                            val user = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.User>("user")
-                            val telephone = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.Telephone>("telephone")
-
-                            if (user != null && telephone != null) {
-                                ScenarioButton(navController, user, telephone)
-                            }else {
-                                Log.e("NAV", "❌ User ou Telephone manquant dans bouton")
-                            }
+                            ScenarioButton(navController, viewModel)
                         }
-
-                        // Scénario drag
                         composable("scenario_drag") {
-                            val user = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.User>("user")
-                            val telephone = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.Telephone>("telephone")
-
-                            if (user != null && telephone != null) {
-                                ScenarioDragAndDropScreen(navController, user, telephone)
-                            }else {
-                                Log.e("NAV", "❌ User ou Telephone manquant dans scenario_drag")
-                            }
+                            ScenarioDragAndDropScreen(navController, viewModel)
                         }
-
-                        // Scénario popup
                         composable("scenario_popup") {
-                            val user = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.User>("user")
-                            val telephone = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.Telephone>("telephone")
+                            ScenarioPopupScreen(navController, viewModel)
+                        }
 
-                            if (user != null && telephone != null) {
-                                ScenarioPopupScreen(navController, user, telephone)
-                            }else {
-                                Log.e("NAV", "❌ User ou Telephone manquant dans scenario_popup")
+                        // Écran sliders
+                        composable("sliders/{vibrationId}/{scenario}") { backStackEntry ->
+                            val vibrationId = backStackEntry.arguments?.getString("vibrationId")?.toIntOrNull()
+                            val scenario = backStackEntry.arguments?.getString("scenario")
+
+                            val user = viewModel.user.value
+                            val telephone = viewModel.telephone.value
+
+                            if (vibrationId != null && scenario != null && user != null && telephone != null) {
+                                val test = viewModel.findTest(vibrationId, scenario)
+                                if (test != null) {
+                                    SliderScreen(navController, viewModel)
+
+                                } else {
+                                    println("❌ Test introuvable pour vibrationId=$vibrationId / scenario=$scenario")
+                                }
+                            } else {
+                                println("❌ Données manquantes dans SliderScreen")
                             }
                         }
 
-                        // Écran des sliders
-                        composable("sliders") {
-                            val vibrationId = navController.previousBackStackEntry?.savedStateHandle?.get<Int>("vibrationId") ?: 0
-                            val nextScenario = navController.previousBackStackEntry?.savedStateHandle?.get<String>("nextScenario") ?: ""
-                            val user = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.User>("user")
-                            val telephone = navController.previousBackStackEntry?.savedStateHandle?.get<DataModel.Telephone>("telephone")
-
-                            if (user != null && telephone != null) {
-                                SliderScreen(navController, vibrationId, nextScenario, user, telephone)
-                            }
+                        // Fin de test
+                        composable("test_termine") {
+                            EndScreen(navController)
                         }
 
-                        // Fin du test
-                        composable("end") {
-                            EndScreen()
-                        }
                     }
                 }
             }

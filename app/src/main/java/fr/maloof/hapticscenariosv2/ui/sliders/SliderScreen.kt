@@ -15,12 +15,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import fr.maloof.hapticscenariosv2.network.DataModel
 import fr.maloof.hapticscenariosv2.network.ServiceLocator
-import fr.maloof.hapticscenariosv2.utils.ScenarioController
 import fr.maloof.hapticscenariosv2.utils.TestProgressController
-import fr.maloof.hapticscenariosv2.utils.VibrationManager
+import fr.maloof.hapticscenariosv2.viewmodel.ScenarioViewModel
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -28,21 +28,25 @@ import retrofit2.Response
 @Composable
 fun SliderScreen(
     navController: NavController,
-    vibrationId: Int,
-    nextScenario: String? = null,
-    user: DataModel.User,
-    telephone: DataModel.Telephone
+    viewModel: ScenarioViewModel = viewModel()
 ) {
+    val user = viewModel.user.value
+    val telephone = viewModel.telephone.value
+    val test = viewModel.getCurrentTest()
+
+
+    if (user == null || telephone == null || test == null) {
+        println("❌ Données manquantes dans SliderScreen")
+        return
+    }
+
     val context = LocalContext.current
-    val vibrationManager = remember { VibrationManager(context) }
 
     var lentRapide by remember { mutableStateOf(2) }
     var echecSucces by remember { mutableStateOf(2) }
     var peuBeaucoup by remember { mutableStateOf(2) }
     var diminutionAugmentation by remember { mutableStateOf(2) }
     var douxTranchant by remember { mutableStateOf(2) }
-
-    val scenarioEvaluated = nextScenario ?: ScenarioController.getRandomScenario()
 
     var isButtonEnabled by remember { mutableStateOf(true) }
     var isLoading by remember { mutableStateOf(false) }
@@ -82,11 +86,6 @@ fun SliderScreen(
 
                         TestProgressController.increment()
 
-                        println("🟩 [DEBUG] Vibration évaluée : $vibrationId")
-                        println("🟩 [DEBUG] Scénario : $scenarioEvaluated")
-                        println("🟩 [DEBUG] Réponses : L/R=$lentRapide, E/S=$echecSucces, P/B=$peuBeaucoup, D/A=$diminutionAugmentation, D/T=$douxTranchant")
-                        println("🟩 [DEBUG] User ID : ${user.id}, Tel ID : ${telephone.id}")
-
                         val experience = DataModel.EmotionalExperience(
                             user = "/api/users/${user.id}",
                             telephone = "/api/telephones/${telephone.id}",
@@ -95,12 +94,10 @@ fun SliderScreen(
                             slider3 = peuBeaucoup,
                             slider4 = diminutionAugmentation,
                             slider5 = douxTranchant,
-                            scenario = scenarioEvaluated,
-                            vibrationId = vibrationId,
+                            scenario = test.scenario,
+                            vibrationId = test.vibrationId,
                             mobile = 0
                         )
-
-                        println("🟨 [ENVOI] Envoi de l'expérience : $experience")
 
                         ServiceLocator.apiService.postEmotionalExperience(experience)
                             .enqueue(object : Callback<DataModel.EmotionalExperience> {
@@ -109,23 +106,15 @@ fun SliderScreen(
                                     response: Response<DataModel.EmotionalExperience>
                                 ) {
                                     if (response.isSuccessful) {
-                                        println("✅ Expérience enregistrée : ${response.body()}")
-                                        val next = if (TestProgressController.isFinished()) "end" else scenarioEvaluated
-                                        println("➡️ Navigation vers $next")
+                                        navController.navigate("start")
 
-                                        navController.currentBackStackEntry?.savedStateHandle?.set("user", user)
-                                        navController.currentBackStackEntry?.savedStateHandle?.set("telephone", telephone)
-
-                                        navController.navigate(next)
                                     } else {
-                                        println("❌ Erreur HTTP (${response.code()}): ${response.errorBody()?.string()}")
                                         isButtonEnabled = true
                                         isLoading = false
                                     }
                                 }
 
                                 override fun onFailure(call: Call<DataModel.EmotionalExperience>, t: Throwable) {
-                                    println("🔥 Envoi échoué : ${t.message}")
                                     isButtonEnabled = true
                                     isLoading = false
                                 }
@@ -157,7 +146,6 @@ fun SliderScreen(
         }
     }
 }
-
 
 
 @Composable
@@ -208,3 +196,5 @@ fun ThreeStateToggle(
         }
     }
 }
+
+

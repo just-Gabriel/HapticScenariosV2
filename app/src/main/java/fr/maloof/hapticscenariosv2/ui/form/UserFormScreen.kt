@@ -14,11 +14,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import fr.maloof.hapticscenariosv2.network.ServiceLocator
 import fr.maloof.hapticscenariosv2.network.DataModel
+import fr.maloof.hapticscenariosv2.utils.TestProgressController
+import fr.maloof.hapticscenariosv2.utils.VibrationManager
+import fr.maloof.hapticscenariosv2.viewmodel.ScenarioViewModel
 
 
 @Composable
-fun UserFormScreen(onFormSubmit: (DataModel.User, DataModel.Telephone) -> Unit)
- {
+fun UserFormScreen(
+    vibrationManager: VibrationManager,
+    viewModel: ScenarioViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+    onFormSubmit: () -> Unit
+) {
 
 
     // Champs utilisateur
@@ -221,14 +227,25 @@ fun UserFormScreen(onFormSubmit: (DataModel.User, DataModel.Telephone) -> Unit)
                                         ) {
                                             val savedTelephone = response.body()
                                             if (savedTelephone != null) {
-                                                Log.d(
-                                                    "RETROFIT",
-                                                    "✅ Téléphone envoyé - ID : ${savedTelephone.id}"
-                                                )
+                                                Log.d("RETROFIT", "✅ Téléphone envoyé - ID : ${savedTelephone.id}")
+                                                Log.d("INIT", "🧠 Initialisation des scénarios en cours...")
 
-                                                // ✅ Passe les bons objets avec ID
-                                                onFormSubmit(savedUser, savedTelephone)
-                                            } else {
+                                                // Initialisation de la liste des tests scénarios + vibrations
+                                                viewModel.user.value = savedUser
+                                                viewModel.telephone.value = savedTelephone
+
+
+                                                // ✅ Réinitialise les compteurs et les tests
+                                                TestProgressController.reset()
+                                                viewModel.reset()
+                                                viewModel.initialize(vibrationManager)
+                                                Log.d("INIT_TESTS", "✅ ViewModel initialisé : ${viewModel.getRemainingCount()} tests prêts")
+
+                                                onFormSubmit()
+
+
+                                            }
+                                            else {
                                                 Log.e("RETROFIT", "❌ Téléphone null après POST")
                                                 isButtonEnabled = true
                                             }

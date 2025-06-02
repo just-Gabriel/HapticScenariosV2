@@ -8,47 +8,50 @@ import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.*
 import androidx.navigation.NavController
-import fr.maloof.hapticscenariosv2.utils.ScenarioController
-import fr.maloof.hapticscenariosv2.utils.VibrationManager
 import kotlinx.coroutines.delay
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.platform.LocalContext
-import fr.maloof.hapticscenariosv2.network.DataModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import fr.maloof.hapticscenariosv2.utils.navigateToSlidersWithTest
+import fr.maloof.hapticscenariosv2.viewmodel.ScenarioViewModel
 
 @Composable
-fun ScenarioPopupScreen(navController: NavController, user: DataModel.User, telephone: DataModel.Telephone)
- {
-    val context = LocalContext.current
-    val vibrationManager = remember { VibrationManager(context) }
+fun ScenarioPopupScreen(
+    navController: NavController,
+    viewModel: ScenarioViewModel = viewModel()
+) {
+    val test = viewModel.getCurrentTest()
+    val user = viewModel.user.value
+    val telephone = viewModel.telephone.value
+
 
     var showPopup by remember { mutableStateOf(false) }
     var navigateToNext by remember { mutableStateOf(false) }
-    val nextScenario = ScenarioController.getRandomScenario()
+
+    if (test == null || user == null || telephone == null) {
+        println("⚠️ Données manquantes dans ScenarioPopupScreen")
+        return
+    }
 
     LaunchedEffect(Unit) {
-        delay(1500) // Délai pour afficher le popup
-        showPopup = true
-        vibrationManager.playNextVibration()
+        println("✅ ScenarioPopup lancé pour vibration ${test.vibrationId}")
 
-        delay(1500) // Délai avant de naviguer vers les sliders
+        delay(1500)
+        showPopup = true
+        test.callback.invoke()
+
+        delay(1500)
         navigateToNext = true
     }
 
-     if (navigateToNext) {
-         LaunchedEffect(Unit) {
-             navController.currentBackStackEntry?.savedStateHandle?.set("vibrationId", vibrationManager.currentVibrationId)
-             navController.currentBackStackEntry?.savedStateHandle?.set("nextScenario", nextScenario)
-             navController.currentBackStackEntry?.savedStateHandle?.set("user", user)
-             navController.currentBackStackEntry?.savedStateHandle?.set("telephone", telephone)
-             navController.navigate("sliders")
-         }
-     }
+    if (navigateToNext) {
+        LaunchedEffect(Unit) {
+            navigateToSlidersWithTest(navController, viewModel, test)
+        }
+    }
 
-
-     // Fond d'écran
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -67,14 +70,11 @@ fun ScenarioPopupScreen(navController: NavController, user: DataModel.User, tele
                     .fillMaxWidth(0.85f)
                     .shadow(8.dp, RoundedCornerShape(16.dp))
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color.White), // Fond blanc
-
+                    .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
-                // Notification "vide"
                 Row(
-                    modifier = Modifier
-                        .padding(12.dp),
+                    modifier = Modifier.padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
