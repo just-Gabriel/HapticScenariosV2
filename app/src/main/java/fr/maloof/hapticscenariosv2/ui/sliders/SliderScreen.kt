@@ -25,6 +25,10 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
+// ... imports inchangés ...
+
+// ... imports inchangés ...
+
 @Composable
 fun SliderScreen(
     navController: NavController,
@@ -33,7 +37,6 @@ fun SliderScreen(
     val user = viewModel.user.value
     val telephone = viewModel.telephone.value
     val test = viewModel.getCurrentTest()
-
 
     if (user == null || telephone == null || test == null) {
         println("❌ Données manquantes dans SliderScreen")
@@ -62,7 +65,15 @@ fun SliderScreen(
             ) {
                 Text("Évaluation de la vibration", fontSize = 22.sp, color = Color(0xFF019AAF))
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Tests restants : ${TestProgressController.remaining()}", fontSize = 18.sp, color = Color(0xFF019AAF))
+                Text(
+                    text = if (test.isTraining) {
+                        "Tests d'entraînement restants : ${TestProgressController.remaining()}"
+                    } else {
+                        "Tests restants : ${TestProgressController.remaining()}"
+                    },
+                    fontSize = 18.sp,
+                    color = Color(0xFF019AAF)
+                )
                 Spacer(modifier = Modifier.height(32.dp))
 
                 ThreeStateToggle("Lent", "Rapide", lentRapide) { lentRapide = it }
@@ -84,41 +95,46 @@ fun SliderScreen(
                         isButtonEnabled = false
                         isLoading = true
 
-                        TestProgressController.increment()
+                        TestProgressController.increment(test.isTraining)
 
-                        val experience = DataModel.EmotionalExperience(
-                            user = "/api/users/${user.id}",
-                            telephone = "/api/telephones/${telephone.id}",
-                            slider1 = lentRapide,
-                            slider2 = echecSucces,
-                            slider3 = peuBeaucoup,
-                            slider4 = diminutionAugmentation,
-                            slider5 = douxTranchant,
-                            scenario = test.scenario,
-                            vibrationId = test.vibrationId,
-                            mobile = 0
-                        )
+                        if (test.isTraining) {
+                            println("🧪 Test d'entraînement, pas d'envoi en BDD")
+                            TestProgressController.finishTrainingIfNeeded()
+                            navController.navigate("start")
+                        } else {
+                            val experience = DataModel.EmotionalExperience(
+                                user = "/api/users/${user.id}",
+                                telephone = "/api/telephones/${telephone.id}",
+                                slider1 = lentRapide,
+                                slider2 = echecSucces,
+                                slider3 = peuBeaucoup,
+                                slider4 = diminutionAugmentation,
+                                slider5 = douxTranchant,
+                                scenario = test.scenario,
+                                vibrationId = test.vibrationId,
+                                mobile = 0
+                            )
 
-                        ServiceLocator.apiService.postEmotionalExperience(experience)
-                            .enqueue(object : Callback<DataModel.EmotionalExperience> {
-                                override fun onResponse(
-                                    call: Call<DataModel.EmotionalExperience>,
-                                    response: Response<DataModel.EmotionalExperience>
-                                ) {
-                                    if (response.isSuccessful) {
-                                        navController.navigate("start")
+                            ServiceLocator.apiService.postEmotionalExperience(experience)
+                                .enqueue(object : Callback<DataModel.EmotionalExperience> {
+                                    override fun onResponse(
+                                        call: Call<DataModel.EmotionalExperience>,
+                                        response: Response<DataModel.EmotionalExperience>
+                                    ) {
+                                        if (response.isSuccessful) {
+                                            navController.navigate("start")
+                                        } else {
+                                            isButtonEnabled = true
+                                            isLoading = false
+                                        }
+                                    }
 
-                                    } else {
+                                    override fun onFailure(call: Call<DataModel.EmotionalExperience>, t: Throwable) {
                                         isButtonEnabled = true
                                         isLoading = false
                                     }
-                                }
-
-                                override fun onFailure(call: Call<DataModel.EmotionalExperience>, t: Throwable) {
-                                    isButtonEnabled = true
-                                    isLoading = false
-                                }
-                            })
+                                })
+                        }
                     },
                     enabled = isButtonEnabled,
                     colors = ButtonDefaults.buttonColors(
@@ -146,6 +162,8 @@ fun SliderScreen(
         }
     }
 }
+
+
 
 
 @Composable

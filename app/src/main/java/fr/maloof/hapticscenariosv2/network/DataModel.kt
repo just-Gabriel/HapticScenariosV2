@@ -39,7 +39,8 @@ class DataModel {
     data class ScenarioVibration(
         val scenario: String,
         val vibrationId: Int,
-        val callback: () -> Unit
+        val callback: () -> Unit,
+        val isTraining: Boolean = false
     ): Parcelable
 
     data class EmotionalExperience(

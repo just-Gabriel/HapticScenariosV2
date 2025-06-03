@@ -32,28 +32,39 @@ class ScenarioViewModel : ViewModel() {
             error("❌ Il faut exactement 20 vibrations de base. Actuellement : ${baseVibrations.size}")
         }
 
+        val trainingTests = baseVibrations.shuffled().map { (id, cb) ->
+            val scenario = scenarioList.random()
+            DataModel.ScenarioVibration(scenario, id, cb, isTraining = true)
+        }
+
         val tempTests = mutableListOf<DataModel.ScenarioVibration>()
 
         for (scenario in scenarioList) {
             val doubleList = (baseVibrations + baseVibrations).shuffled()
             if (doubleList.size != 40) error("❌ Mauvais total dans la liste pour $scenario")
 
-            tempTests += doubleList.map { (id, cb) -> DataModel.ScenarioVibration(scenario, id, cb) }
+            tempTests += doubleList.map { (id, cb) ->
+                DataModel.ScenarioVibration(scenario, id, cb, isTraining = false)
+            }
         }
 
         allTests.clear()
-        allTests.addAll(tempTests.shuffled())
+        allTests.addAll(trainingTests + tempTests.shuffled()) // 🧠 Training d'abord, puis vrais tests mélangés
         currentIndex = 0
 
-        println("🎲 Liste finale mélangée :")
+        println("🎯 20 tests d'entraînement + 120 vrais tests générés")
+        println("✅ Entraînement : ${trainingTests.size} tests")
+        println("✅ Réels : ${tempTests.size} tests")
+
         scenarioList.forEach { scenario ->
             val ids = tempTests.filter { it.scenario == scenario }.map { it.vibrationId }
             val valid = ids.groupingBy { it }.eachCount().all { it.value == 2 }
             println("🔹 $scenario → ${ids.size} tests (IDs: $ids)")
             println(if (valid) "✅ Répartition correcte" else "❌ Répartition incorrecte")
         }
-        println("✅ ScenarioViewModel initialisé avec ${allTests.size} tests")
     }
+
+
 
     fun getNextTest(): DataModel.ScenarioVibration? {
         return if (currentIndex < allTests.size) allTests[currentIndex++] else null
