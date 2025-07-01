@@ -52,13 +52,13 @@ class MainActivity : ComponentActivity() {
 
 
                         // Scénarios
-                        composable("bouton") {
+                        composable("button") {
                             ScenarioButton(navController, viewModel)
                         }
-                        composable("scenario_drag") {
+                        composable("dragAndDrop") {
                             ScenarioDragAndDropScreen(navController, viewModel)
                         }
-                        composable("scenario_popup") {
+                        composable("popup") {
                             ScenarioPopupScreen(navController, viewModel)
                         }
 

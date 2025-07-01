@@ -85,7 +85,7 @@ fun ScenarioButton(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) {
-                    if (test.scenario == "bouton") {
+                    if (test.scenario == "button") {
                         isPressed = true
                         isClickable = false
                         callback.invoke()
@@ -101,7 +101,7 @@ fun ScenarioButton(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                "Bouton",
+                "Button",
                 color = Color.White,
                 fontSize = 18.sp,
                 style = MaterialTheme.typography.titleMedium

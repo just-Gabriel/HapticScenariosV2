@@ -7,7 +7,8 @@ import fr.maloof.hapticscenariosv2.utils.VibrationManager
 
 class ScenarioViewModel : ViewModel() {
 
-    private val scenarioList = listOf("bouton", "scenario_drag", "scenario_popup")
+    //private val scenarioList = listOf("bouton", "scenario_drag", "scenario_popup")
+    private val scenarioList = listOf("button", "dragAndDrop", "popup")
 
     private val allTests = mutableListOf<DataModel.ScenarioVibration>()
     private var currentIndex = 0
@@ -49,7 +50,7 @@ class ScenarioViewModel : ViewModel() {
         }
 
         allTests.clear()
-        allTests.addAll(trainingTests + tempTests.shuffled()) // 🧠 Training d'abord, puis vrais tests mélangés
+        allTests.addAll(trainingTests + tempTests.shuffled()) // Training d'abord, puis vrais tests mélangés
         currentIndex = 0
 
         println("🎯 20 tests d'entraînement + 120 vrais tests générés")

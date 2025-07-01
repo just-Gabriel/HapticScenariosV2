@@ -9,7 +9,7 @@ fun navigateToSlidersWithTest(
     viewModel: ScenarioViewModel,
     test: DataModel.ScenarioVibration
 ) {
-    // ✅ Stockage dans le ViewModel (plus dans le singleton)
+    // ✅ Stockage dans le ViewModel
 
     if (viewModel.user.value == null || viewModel.telephone.value == null) {
         println("❌ Impossible de naviguer : données manquantes dans le ViewModel")
